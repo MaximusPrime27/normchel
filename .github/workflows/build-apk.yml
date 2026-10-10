@@ -15,7 +15,7 @@ jobs:
 
       - name: Unpack Android project
         run: |
-          unzip -q math_solver_android_ready_for_github.zip
+          unzip unzip -q "math_solver_android_ready_for_github (1).zip"
           cp -r math_solver_android/* .
           cp -r math_solver_android/.github . || true
 
