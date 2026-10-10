@@ -1,0 +1,51 @@
+name: Build MathSolver iOS
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+
+  build:
+
+    runs-on: macos-15
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+
+      - name: Build Swift package
+        working-directory: MathSolver_iOS
+        run: |
+          swift build
+
+
+      - name: Prepare IPA folder
+        run: |
+          mkdir -p Payload/MathSolver.app
+
+
+      - name: Copy app files
+        run: |
+          cp -R MathSolver_iOS/.build/* Payload/MathSolver.app/ || true
+
+
+      - name: Create unsigned IPA
+        run: |
+          zip -r MathSolver_iOS_unsigned.ipa Payload
+
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: MathSolver-iOS-IPA
+          path: MathSolver_iOS_unsigned.ipa
