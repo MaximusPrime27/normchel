@@ -15,9 +15,8 @@ jobs:
 
       - name: Unpack Android project
         run: |
-          unzip unzip -q "math_solver_android_ready_for_github (1).zip"
+          unzip -q "math_solver_android_ready_for_github (1).zip"
           cp -r math_solver_android/* .
-          cp -r math_solver_android/.github . || true
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
