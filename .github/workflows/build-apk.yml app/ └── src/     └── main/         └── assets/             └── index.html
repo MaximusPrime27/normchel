@@ -1,0 +1,1488 @@
+name: Build MathSolver APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Unpack Android project
+        run: |
+          unzip -q "math_solver_android_ready_for_github (1).zip"
+          cp -r math_solver_android/* .
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build APK
+        run: gradle assembleDebug --stacktrace
+
+      - name: Rename APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk MathSolver.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MathSolver-APK
+          path: MathSolver.apk
+<button class="tab" onclick="showTab('russian', this)">
+🇷🇺 Русский язык
+</button><section id="russian" class="panel">
+
+    <div class="grid">
+
+        <div class="card">
+
+            <h2>🇷🇺 Русский язык 9–11 классы</h2>
+
+            <label>Раздел</label>
+
+            <select id="rusType" onchange="renderRussianFields()">
+
+                <option value="spelling">
+                    Орфография
+                </option>
+
+                <option value="punctuation">
+                    Пунктуация
+                </option>
+
+                <option value="stress">
+                    Ударения
+                </option>
+
+                <option value="morphology">
+                    Морфология
+                </option>
+
+                <option value="syntax">
+                    Синтаксис
+                </option>
+
+                <option value="exam">
+                    ОГЭ / ЕГЭ
+                </option>
+
+            </select>
+
+            <div id="rusFields"></div>
+
+            <button class="action" onclick="solveRussian()">
+                Проверить
+            </button>
+
+            <div
+                id="rusResult"
+                class="result"
+                style="display:none">
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <h3>Что умеет раздел</h3>
+
+            <div class="small">
+
+                • НЕ / НИ<br>
+                • Н / НН<br>
+                • -ТСЯ / -ТЬСЯ<br>
+                • приставки ПРЕ- / ПРИ-<br>
+                • чередующиеся гласные<br>
+                • запятые при вводных словах<br>
+                • обращения<br>
+                • причастные и деепричастные обороты<br>
+                • СПП / БСП / ССП<br>
+                • ударения<br>
+                • части речи<br>
+                • подготовка к ОГЭ и ЕГЭ
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>function renderRussianFields() {
+
+    const type = document.getElementById("rusType").value;
+
+    let html = "";
+
+
+    if (type === "spelling") {
+
+        html = `
+            <label>Слово или предложение</label>
+
+            <textarea
+                id="rusInput"
+                placeholder="Например: Он учится в школе.">
+            </textarea>
+
+            <div class="small">
+                Проверка типичных орфограмм:
+                НЕ/НИ, Н/НН, ТСЯ/ТЬСЯ,
+                ПРЕ/ПРИ и другие.
+            </div>
+        `;
+
+    }
+
+
+    if (type === "punctuation") {
+
+        html = `
+            <label>Введите предложение</label>
+
+            <textarea
+                id="rusInput"
+                placeholder="Например: Конечно я приду завтра">
+            </textarea>
+
+            <div class="small">
+                Приложение подскажет возможные места
+                постановки знаков препинания.
+            </div>
+        `;
+
+    }
+
+
+    if (type === "stress") {
+
+        html = `
+            <label>Введите слово</label>
+
+            <input
+                id="rusInput"
+                placeholder="Например: звонит">
+        `;
+
+    }
+
+
+    if (type === "morphology") {
+
+        html = `
+            <label>Введите слово</label>
+
+            <input
+                id="rusInput"
+                placeholder="Например: красивый">
+
+            <div class="small">
+                Определение части речи
+                по типичным признакам.
+            </div>
+        `;
+
+    }
+
+
+    if (type === "syntax") {
+
+        html = `
+            <label>Введите предложение</label>
+
+            <textarea
+                id="rusInput"
+                placeholder="Когда наступил вечер мы вернулись домой">
+            </textarea>
+        `;
+
+    }
+
+
+    if (type === "exam") {
+
+        html = `
+            <label>Режим</label>
+
+            <select id="rusExamType">
+
+                <option value="oge">
+                    ОГЭ
+                </option>
+
+                <option value="ege">
+                    ЕГЭ
+                </option>
+
+            </select>
+
+            <label>Ответ / предложение</label>
+
+            <textarea
+                id="rusInput"
+                placeholder="Введите текст задания или свой ответ">
+            </textarea>
+        `;
+
+    }
+
+
+    document.getElementById("rusFields").innerHTML = html;
+
+}function solveRussian() {
+
+    const type =
+        document.getElementById("rusType").value;
+
+    const input =
+        document.getElementById("rusInput");
+
+    if (!input) {
+        return;
+    }
+
+    const text = input.value.trim();
+
+    if (!text) {
+
+        showResult(
+            "rusResult",
+            "Введите слово или предложение."
+        );
+
+        return;
+
+    }
+
+
+    if (type === "spelling") {
+
+        checkRussianSpelling(text);
+
+    }
+
+
+    if (type === "punctuation") {
+
+        checkRussianPunctuation(text);
+
+    }
+
+
+    if (type === "stress") {
+
+        checkRussianStress(text);
+
+    }
+
+
+    if (type === "morphology") {
+
+        checkRussianMorphology(text);
+
+    }
+
+
+    if (type === "syntax") {
+
+        checkRussianSyntax(text);
+
+    }
+
+
+    if (type === "exam") {
+
+        russianExamHelper(text);
+
+    }
+
+}function checkRussianSpelling(text) {
+
+    const lower = text.toLowerCase();
+
+    let result = [];
+
+
+
+    if (
+        lower.includes("ться") ||
+        lower.includes("тся")
+    ) {
+
+        result.push(
+            "ТСЯ / ТЬСЯ:\n" +
+            "Если глагол отвечает на вопрос " +
+            "«что делать? / что сделать?» — пишется -ТЬСЯ.\n" +
+            "Если «что делает? / что сделает?» — пишется -ТСЯ."
+        );
+
+    }
+
+
+
+    if (
+        /\bне\s+[а-яё]+/i.test(text)
+    ) {
+
+        result.push(
+            "НЕ:\n" +
+            "Проверь, можно ли заменить слово " +
+            "синонимом без НЕ, или есть противопоставление с «а»."
+        );
+
+    }
+
+
+
+    if (
+        lower.includes("при") ||
+        lower.includes("пре")
+    ) {
+
+        result.push(
+            "ПРЕ- / ПРИ-:\n" +
+            "ПРИ-: приближение, присоединение, близость, неполнота действия.\n" +
+            "ПРЕ-: значение «очень» или близкое к ПЕРЕ-."
+        );
+
+    }
+
+
+
+    if (
+        /\b\w*нн\w*\b/i.test(text)
+    ) {
+
+        result.push(
+            "Н / НН:\n" +
+            "Проверь, является ли слово причастием " +
+            "или прилагательным, есть ли приставка " +
+            "и зависимое слово."
+        );
+
+    }
+
+
+
+    if (result.length === 0) {
+
+        result.push(
+            "Явных типичных орфограмм не найдено.\n" +
+            "Проверь безударные гласные, согласные, " +
+            "слитное/раздельное написание и словарные слова."
+        );
+
+    }
+
+
+
+    showResult(
+        "rusResult",
+        result.join("\n\n")
+    );
+
+}function checkRussianPunctuation(text) {
+
+    let result = [];
+
+    const lower = text.toLowerCase();
+
+
+
+    const introWords = [
+        "конечно",
+        "вероятно",
+        "возможно",
+        "кажется",
+        "например",
+        "во-первых",
+        "во-вторых",
+        "следовательно",
+        "наконец"
+    ];
+
+
+    introWords.forEach(word => {
+
+        if (lower.includes(word)) {
+
+            result.push(
+                `Слово «${word}» может быть вводным. ` +
+                `Если оно вводное, его нужно выделить запятыми.`
+            );
+
+        }
+
+    });
+
+
+
+    const subordinate = [
+        "когда",
+        "потому что",
+        "если",
+        "хотя",
+        "чтобы",
+        "который",
+        "так как",
+        "поскольку"
+    ];
+
+
+    subordinate.forEach(word => {
+
+        if (lower.includes(word)) {
+
+            result.push(
+                `Найден союз/союзное слово «${word}». ` +
+                `Возможно, это сложноподчинённое предложение. ` +
+                `Проверь границу частей и постановку запятой.`
+            );
+
+        }
+
+    });
+
+
+
+    if (
+        /\bи\b/i.test(text)
+    ) {
+
+        result.push(
+            "Союз «и»: проверь количество грамматических основ. " +
+            "Если он соединяет части сложного предложения, " +
+            "обычно перед ним нужна запятая."
+        );
+
+    }
+
+
+
+    if (
+        /обращ|ребята|мама|папа|друзья/i.test(lower)
+    ) {
+
+        result.push(
+            "Возможное обращение нужно выделить запятыми."
+        );
+
+    }
+
+
+
+    if (result.length === 0) {
+
+        result.push(
+            "Автоматическая проверка не нашла очевидных конструкций. " +
+            "Найди грамматические основы и проверь границы частей предложения."
+        );
+
+    }
+
+
+    showResult(
+        "rusResult",
+        result.join("\n\n")
+    );
+
+}const stressDictionary = {
+
+    "звонит": "звонИт",
+
+    "баловать": "баловАть",
+
+    "красивее": "красИвее",
+
+    "торты": "тОрты",
+
+    "договор": "договОр",
+
+    "договоры": "договОры",
+
+    "каталог": "каталОг",
+
+    "километр": "киломЕтр",
+
+    "жалюзи": "жалюзИ",
+
+    "цемент": "цемЕнт",
+
+    "облегчить": "облегчИть",
+
+    "включит": "включИт",
+
+    "позвонит": "позвонИт",
+
+    "начался": "началсЯ",
+
+    "приняла": "принялА",
+
+    "заняла": "занялА",
+
+    "создала": "создалА",
+
+    "брала": "бралА",
+
+    "клала": "клАла",
+
+    "сняла": "снялА",
+
+    "ждала": "ждалА"
+
+};
+
+
+function checkRussianStress(text) {
+
+    const word =
+        text
+        .trim()
+        .toLowerCase();
+
+    if (stressDictionary[word]) {
+
+        showResult(
+            "rusResult",
+            "Правильное ударение:\n\n" +
+            stressDictionary[word]
+        );
+
+    } else {
+
+        showResult(
+            "rusResult",
+            "Этого слова пока нет во встроенном словаре ударений."
+        );
+
+    }
+
+}function checkRussianMorphology(word) {
+
+    const text =
+        word
+        .trim()
+        .toLowerCase();
+
+
+    let answer = [];
+
+
+    if (
+        /(ть|ти|чь)$/.test(text)
+    ) {
+
+        answer.push(
+            "Вероятно, это глагол в неопределённой форме."
+        );
+
+    }
+
+
+    else if (
+        /(ый|ий|ой|ая|яя|ое|ее|ые|ие)$/.test(text)
+    ) {
+
+        answer.push(
+            "Вероятно, это имя прилагательное."
+        );
+
+    }
+
+
+    else if (
+        /(о|е)$/.test(text)
+    ) {
+
+        answer.push(
+            "Возможно, это наречие или существительное среднего рода. " +
+            "Нужен контекст предложения."
+        );
+
+    }
+
+
+    else {
+
+        answer.push(
+            "Вероятно, существительное или другая часть речи. " +
+            "Для точного разбора нужен контекст."
+        );
+
+    }
+
+
+    answer.push(
+        "\nДля полного морфологического разбора нужно определить:\n" +
+        "1. Часть речи.\n" +
+        "2. Начальную форму.\n" +
+        "3. Постоянные признаки.\n" +
+        "4. Непостоянные признаки.\n" +
+        "5. Роль в предложении."
+    );
+
+
+    showResult(
+        "rusResult",
+        answer.join("\n")
+    );
+
+}function checkRussianSyntax(text) {
+
+    const lower = text.toLowerCase();
+
+    let result = [];
+
+
+    let predicateHints =
+        text.match(
+            /\b(был|была|были|есть|стал|стала|идёт|пришёл|сказал|делает|учится|работает)\b/gi
+        );
+
+
+    if (predicateHints) {
+
+        result.push(
+            `Найдено возможных сказуемых: ${predicateHints.length}.`
+        );
+
+    }
+
+
+    if (
+        /\bкогда\b|\bесли\b|\bпотому что\b|\bчтобы\b|\bкоторый\b/i.test(lower)
+    ) {
+
+        result.push(
+            "Предложение похоже на СПП — сложноподчинённое."
+        );
+
+    }
+
+
+    if (
+        /\bа\b|\bно\b|\bи\b/i.test(lower)
+    ) {
+
+        result.push(
+            "Есть сочинительный союз. " +
+            "Проверь, соединяет он однородные члены или части сложного предложения."
+        );
+
+    }
+
+
+    if (
+        text.includes(":") ||
+        text.includes("—")
+    ) {
+
+        result.push(
+            "Есть двоеточие или тире. " +
+            "Возможно бессоюзное сложное предложение."
+        );
+
+    }
+
+
+    result.push(
+        "\nАлгоритм разбора:\n" +
+        "1. Найди грамматическую основу.\n" +
+        "2. Определи количество частей.\n" +
+        "3. Найди союзы.\n" +
+        "4. Определи связь между частями.\n" +
+        "5. Поставь знаки препинания."
+    );
+
+
+    showResult(
+        "rusResult",
+        result.join("\n\n")
+    );
+
+}function russianExamHelper(text) {
+
+    const type =
+        document.getElementById("rusExamType").value;
+
+
+    if (type === "oge") {
+
+        showResult(
+            "rusResult",
+            `ОГЭ — русский язык
+
+Текст:
+${text}
+
+Проверь:
+
+• орфографию;
+• пунктуацию;
+• грамматические основы;
+• средства выразительности;
+• типы связи слов;
+• синтаксический анализ;
+• содержание исходного текста.
+
+Для изложения:
+1. Определи микротемы.
+2. Удали второстепенную информацию.
+3. Сохрани основную мысль.
+
+Для сочинения:
+тезис → пример → объяснение → вывод.`
+        );
+
+    }
+
+
+    if (type === "ege") {
+
+        showResult(
+            "rusResult",
+            `ЕГЭ — русский язык
+
+Текст:
+${text}
+
+Рекомендуемый порядок:
+
+1. Найди грамматические основы.
+2. Проверь орфограммы.
+3. Проверь НЕ/НИ.
+4. Проверь Н/НН.
+5. Проверь слитное/раздельное написание.
+6. Проверь вводные слова.
+7. Проверь обособленные конструкции.
+8. Проверь сложные предложения.
+9. Проверь лексические нормы.
+10. Проверь ударения.
+
+Для сочинения:
+проблема → позиция автора → комментарий → связь примеров → собственное отношение → вывод.`
+        );
+
+    }
+
+}<div id="cropContainer" style="display:none">
+
+    <div class="crop-wrapper">
+
+        <img
+            id="cropImage"
+            draggable="false">
+
+        <div id="cropBox">
+
+            <div class="crop-handle tl"></div>
+            <div class="crop-handle tr"></div>
+            <div class="crop-handle bl"></div>
+            <div class="crop-handle br"></div>
+
+        </div>
+
+    </div>
+
+    <button
+        class="action"
+        onclick="applyCrop()">
+
+        ✂️ Обрезать фото
+
+    </button>
+
+</div>
+
+
+<canvas
+    id="cropCanvas"
+    style="display:none">
+</canvas>.crop-wrapper {
+
+    position: relative;
+
+    width: 100%;
+
+    margin-top: 14px;
+
+    overflow: hidden;
+
+    border-radius: 20px;
+
+    background: #020813;
+
+}
+
+
+#cropImage {
+
+    width: 100%;
+
+    display: block;
+
+    user-select: none;
+
+    touch-action: none;
+
+}
+
+
+#cropBox {
+
+    position: absolute;
+
+    left: 10%;
+
+    top: 10%;
+
+    width: 80%;
+
+    height: 80%;
+
+    border: 3px solid #4ea1ff;
+
+    box-shadow:
+        0 0 0 9999px
+        rgba(0,0,0,.55);
+
+    touch-action: none;
+
+}
+
+
+.crop-handle {
+
+    position: absolute;
+
+    width: 28px;
+
+    height: 28px;
+
+    border-radius: 50%;
+
+    background: white;
+
+    border: 4px solid #4ea1ff;
+
+}
+
+
+.crop-handle.tl {
+
+    left: -14px;
+
+    top: -14px;
+
+}
+
+
+.crop-handle.tr {
+
+    right: -14px;
+
+    top: -14px;
+
+}
+
+
+.crop-handle.bl {
+
+    left: -14px;
+
+    bottom: -14px;
+
+}
+
+
+.crop-handle.br {
+
+    right: -14px;
+
+    bottom: -14px;
+
+}let originalPhoto = null;
+
+let croppedPhotoBlob = null;
+
+
+function previewPhoto(event) {
+
+    const file =
+        event.target.files &&
+        event.target.files[0];
+
+
+    if (!file) {
+        return;
+    }
+
+
+    originalPhoto = file;
+
+    croppedPhotoBlob = null;
+
+
+    const img =
+        document.getElementById("cropImage");
+
+
+    img.src =
+        URL.createObjectURL(file);
+
+
+    document.getElementById(
+        "cropContainer"
+    ).style.display = "block";
+
+
+    img.onload = () => {
+
+        resetCropBox();
+
+    };
+
+}function resetCropBox() {
+
+    const box =
+        document.getElementById("cropBox");
+
+
+    box.style.left = "10%";
+
+    box.style.top = "10%";
+
+    box.style.width = "80%";
+
+    box.style.height = "80%";
+
+}async function applyCrop() {
+
+    const img =
+        document.getElementById("cropImage");
+
+    const box =
+        document.getElementById("cropBox");
+
+    const canvas =
+        document.getElementById("cropCanvas");
+
+
+
+    const imageRect =
+        img.getBoundingClientRect();
+
+
+    const cropRect =
+        box.getBoundingClientRect();
+
+
+
+    const scaleX =
+        img.naturalWidth /
+        imageRect.width;
+
+
+    const scaleY =
+        img.naturalHeight /
+        imageRect.height;
+
+
+
+    const sx =
+        (
+            cropRect.left -
+            imageRect.left
+        ) * scaleX;
+
+
+    const sy =
+        (
+            cropRect.top -
+            imageRect.top
+        ) * scaleY;
+
+
+    const sw =
+        cropRect.width *
+        scaleX;
+
+
+    const sh =
+        cropRect.height *
+        scaleY;
+
+
+
+    canvas.width =
+        Math.round(sw);
+
+
+    canvas.height =
+        Math.round(sh);
+
+
+
+    const ctx =
+        canvas.getContext("2d");
+
+
+    ctx.drawImage(
+
+        img,
+
+        sx,
+        sy,
+
+        sw,
+        sh,
+
+        0,
+        0,
+
+        canvas.width,
+        canvas.height
+
+    );
+
+
+    croppedPhotoBlob =
+        await new Promise(resolve => {
+
+            canvas.toBlob(
+                resolve,
+                "image/jpeg",
+                0.92
+            );
+
+        });
+
+
+    img.src =
+        URL.createObjectURL(
+            croppedPhotoBlob
+        );
+
+
+    resetCropBox();
+
+
+    showResult(
+        "photoStatus",
+        "Фото обрезано. Теперь можно распознавать."
+    );
+
+}let cropDragging = false;
+
+let cropStartX = 0;
+
+let cropStartY = 0;
+
+let cropStartLeft = 0;
+
+let cropStartTop = 0;
+
+
+const cropBox =
+    document.getElementById("cropBox");
+
+
+cropBox.addEventListener(
+    "pointerdown",
+    event => {
+
+        if (
+            event.target.classList.contains(
+                "crop-handle"
+            )
+        ) {
+            return;
+        }
+
+
+        cropDragging = true;
+
+
+        cropStartX =
+            event.clientX;
+
+
+        cropStartY =
+            event.clientY;
+
+
+        cropStartLeft =
+            cropBox.offsetLeft;
+
+
+        cropStartTop =
+            cropBox.offsetTop;
+
+
+        cropBox.setPointerCapture(
+            event.pointerId
+        );
+
+    }
+);
+
+
+cropBox.addEventListener(
+    "pointermove",
+    event => {
+
+        if (!cropDragging) {
+            return;
+        }
+
+
+        const parent =
+            cropBox.parentElement;
+
+
+        let left =
+            cropStartLeft +
+            event.clientX -
+            cropStartX;
+
+
+        let top =
+            cropStartTop +
+            event.clientY -
+            cropStartY;
+
+
+        left =
+            Math.max(
+                0,
+                Math.min(
+                    left,
+                    parent.clientWidth -
+                    cropBox.offsetWidth
+                )
+            );
+
+
+        top =
+            Math.max(
+                0,
+                Math.min(
+                    top,
+                    parent.clientHeight -
+                    cropBox.offsetHeight
+                )
+            );
+
+
+        cropBox.style.left =
+            left + "px";
+
+
+        cropBox.style.top =
+            top + "px";
+
+    }
+);
+
+
+cropBox.addEventListener(
+    "pointerup",
+    () => {
+
+        cropDragging = false;
+
+    }
+);document
+.querySelectorAll(".crop-handle")
+.forEach(handle => {
+
+    handle.addEventListener(
+        "pointerdown",
+        event => {
+
+            event.stopPropagation();
+
+            const box =
+                document.getElementById(
+                    "cropBox"
+                );
+
+
+            const parent =
+                box.parentElement;
+
+
+            const startX =
+                event.clientX;
+
+
+            const startY =
+                event.clientY;
+
+
+            const startWidth =
+                box.offsetWidth;
+
+
+            const startHeight =
+                box.offsetHeight;
+
+
+            const startLeft =
+                box.offsetLeft;
+
+
+            const startTop =
+                box.offsetTop;
+
+
+            const type =
+                handle.classList[1];
+
+
+            function move(e) {
+
+                let dx =
+                    e.clientX -
+                    startX;
+
+
+                let dy =
+                    e.clientY -
+                    startY;
+
+
+                let width =
+                    startWidth;
+
+
+                let height =
+                    startHeight;
+
+
+                let left =
+                    startLeft;
+
+
+                let top =
+                    startTop;
+
+
+                if (
+                    type === "br"
+                ) {
+
+                    width =
+                        startWidth + dx;
+
+                    height =
+                        startHeight + dy;
+
+                }
+
+
+                if (
+                    type === "tl"
+                ) {
+
+                    width =
+                        startWidth - dx;
+
+                    height =
+                        startHeight - dy;
+
+                    left =
+                        startLeft + dx;
+
+                    top =
+                        startTop + dy;
+
+                }
+
+
+                if (
+                    type === "tr"
+                ) {
+
+                    width =
+                        startWidth + dx;
+
+                    height =
+                        startHeight - dy;
+
+                    top =
+                        startTop + dy;
+
+                }
+
+
+                if (
+                    type === "bl"
+                ) {
+
+                    width =
+                        startWidth - dx;
+
+                    height =
+                        startHeight + dy;
+
+                    left =
+                        startLeft + dx;
+
+                }
+
+
+                width =
+                    Math.max(
+                        80,
+                        width
+                    );
+
+
+                height =
+                    Math.max(
+                        80,
+                        height
+                    );
+
+
+                if (
+                    left >= 0 &&
+                    top >= 0 &&
+                    left + width <=
+                    parent.clientWidth &&
+                    top + height <=
+                    parent.clientHeight
+                ) {
+
+                    box.style.left =
+                        left + "px";
+
+                    box.style.top =
+                        top + "px";
+
+                    box.style.width =
+                        width + "px";
+
+                    box.style.height =
+                        height + "px";
+
+                }
+
+            }
+
+
+            function stop() {
+
+                window.removeEventListener(
+                    "pointermove",
+                    move
+                );
+
+
+                window.removeEventListener(
+                    "pointerup",
+                    stop
+                );
+
+            }
+
+
+            window.addEventListener(
+                "pointermove",
+                move
+            );
+
+
+            window.addEventListener(
+                "pointerup",
+                stop
+            );
+
+        });
+
+});
+const file = photoInput.files[0];let file;
+
+if (croppedPhotoBlob) {
+
+    file = croppedPhotoBlob;
+
+} else {
+
+    file =
+        photoInput.files &&
+        photoInput.files[0];
+
+}<button
+    class="action secondary"
+    onclick="analyzeRecognizedText()">
+
+    🧮 Решить как математику
+
+</button>
+
+
+<button
+    class="action secondary"
+    onclick="sendOCRToRussian()">
+
+    🇷🇺 Проверить как русский язык
+
+</button>function sendOCRToRussian() {
+
+    const text =
+        document
+        .getElementById("ocrText")
+        .value;
+
+
+    if (!text.trim()) {
+
+        return;
+
+    }
+
+
+    document
+        .getElementById("rusType")
+        .value = "punctuation";
+
+
+    renderRussianFields();
+
+
+    document
+        .getElementById("rusInput")
+        .value = text;
+
+
+    document
+        .querySelectorAll(".panel")
+        .forEach(
+            p => p.classList.remove(
+                "active"
+            )
+        );
+
+
+    document
+        .getElementById("russian")
+        .classList.add("active");
+
+
+    solveRussian();
+
+}renderRussianFields();
